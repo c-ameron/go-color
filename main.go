@@ -5,52 +5,61 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-    "os"
-    "regexp"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
+func hexHandler(w http.ResponseWriter, r *http.Request) {
 
-func handler(w http.ResponseWriter, r *http.Request) {
+	keys := r.URL.Query()
+	hexColor := keys.Get("hex")
 
-    keys := r.URL.Query()
-    hexColor := keys.Get("hex")
-    if len(keys) > 1 || hexColor == "" {
-        http.Error(w, "bad params", http.StatusBadRequest)
-        return
-    }
-    valid, _ := regexp.MatchString("^[0-9a-fA-F]{6}$", hexColor)
-    if !valid {
-        http.Error(w, "bad params", http.StatusBadRequest)
-        return
-    }
-
-    response := hexToResponse(hexColor)
-
-    fmt.Fprintf(w, "%s", response)
-}
-
-
-func hexToResponse(h string) string {
-	decoded, _ := hex.DecodeString(h)
-
-	var str = make([]string, len(decoded))
-
-	for i, e := range decoded {
-		str[i] = strconv.Itoa(int(e))
+	// anything other than example query is invalid
+	if len(keys) > 1 || !isValidHex(hexColor) {
+		http.Error(w, "Bad query, please use format: /convert?hex=ff0000", http.StatusBadRequest)
+		return
 	}
 
-	response := "RGB(" + strings.Join(str, ", ") + ")"
+	response := hexToRGB(hexColor)
 
-	return response
+	fmt.Fprintf(w, "%s", response)
+}
+
+func isValidHex(h string) bool {
+	valid, _ := regexp.MatchString("^[0-9a-fA-F]{6}$", h)
+	return valid
+}
+
+func hexToRGB(h string) string {
+
+	decoded, _ := hex.DecodeString(h)
+
+	// convert decoded hex bytes to string
+	var hexStr = make([]string, len(decoded))
+	for i, e := range decoded {
+		hexStr[i] = strconv.Itoa(int(e))
+	}
+
+	rgb := "RGB(" + strings.Join(hexStr, ", ") + ")"
+
+	return rgb
+}
+
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Fprintln(w, "OK")
 }
 
 func main() {
-    listenAddr, ok := os.LookupEnv("LISTEN_ADDR")
-    if !ok {
-        listenAddr = "localhost:8080"
-    }
-	http.HandleFunc("/convert", handler)
-	log.Fatal(http.ListenAndServe(listenAddr, nil))
+
+	listenPort, ok := os.LookupEnv("LISTEN_PORT")
+	if !ok {
+		listenPort = "8080"
+	}
+
+	http.HandleFunc("/convert", hexHandler)
+	http.HandleFunc("/status", statusHandler)
+	log.Fatal(http.ListenAndServe(":"+listenPort, nil))
 }
