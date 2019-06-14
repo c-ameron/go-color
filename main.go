@@ -13,11 +13,11 @@ import (
 
 func hexHandler(w http.ResponseWriter, r *http.Request) {
 
-	keys := r.URL.Query()
-	hexColor := keys.Get("hex")
+	params := r.URL.Query()
+	hexColor := params.Get("hex")
 
 	// anything other than example query is invalid
-	if len(keys) > 1 || !isValidHex(hexColor) {
+	if len(params) > 1 || !isValidHex(hexColor) {
 		http.Error(w, "Bad query, please use format: /convert?hex=ff0000", http.StatusBadRequest)
 		return
 	}
