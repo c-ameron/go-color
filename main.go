@@ -5,43 +5,52 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
+    "os"
+    "regexp"
 	"strconv"
 	"strings"
 )
 
+
 func handler(w http.ResponseWriter, r *http.Request) {
 
-	keys := r.URL.Query()
-	hexColor := keys.Get("hex")
-	if len(keys) > 1 || hexColor == "" {
-		http.Error(w, "bad params", http.StatusBadRequest)
-		return
-	}
-	valid, _ := regexp.MatchString("^[0-9a-fA-F]{6}$", hexColor)
-	if !valid {
-		http.Error(w, "bad params", http.StatusBadRequest)
-		return
-	}
+    keys := r.URL.Query()
+    hexColor := keys.Get("hex")
+    if len(keys) > 1 || hexColor == "" {
+        http.Error(w, "bad params", http.StatusBadRequest)
+        return
+    }
+    valid, _ := regexp.MatchString("^[0-9a-fA-F]{6}$", hexColor)
+    if !valid {
+        http.Error(w, "bad params", http.StatusBadRequest)
+        return
+    }
 
-	decoded, _ := hex.DecodeString(hexColor)
+    response := hexToResponse(hexColor)
 
-	var strArray = make([]string, len(decoded))
+    fmt.Fprintf(w, "%s", response)
+}
 
-	response := "RGB("
+
+func hexToResponse(h string) string {
+	decoded, _ := hex.DecodeString(h)
+
+	var str = make([]string, len(decoded))
 
 	for i, e := range decoded {
-		strArray[i] = strconv.Itoa(int(e))
+		str[i] = strconv.Itoa(int(e))
 	}
 
-	response += strings.Join(strArray, ",")
+	response := "RGB(" + strings.Join(str, ", ") + ")"
 
-	response += ")"
-
-	fmt.Fprintf(w, "%s", response)
+	return response
 }
 
 func main() {
+    listenAddr, ok := os.LookupEnv("LISTEN_ADDR")
+    if !ok {
+        listenAddr = "localhost:8080"
+    }
 	http.HandleFunc("/convert", handler)
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }
