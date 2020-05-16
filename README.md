@@ -54,26 +54,3 @@ To change the listening port, set the `LISTEN_PORT` environment variable. The de
 ```bash
 LISTEN_PORT=9000 ./go-color
 ```
-
-## Improvements
-
-- Error handling and logging
-- Unit testing
-- I could've returned a 500 if there were any issues with the conversion
-- I believe each http request is handled in it's own goroutine so I don't think there's any other noticeable performance gains
-
-## Performance
-
-### Scalability
-
-This is a stateless app, so essentially you can scale it up however much you want.
-
-### Speed & Space
-
-For simplicity I used the `debian:strech-slim` image.
-Unless absolutely necessary I find using `scratch` or `alpine` images kind of a pain to deal with
-
-### Metrics
-
-Having a counter on the connections would be cool but overkill.
-On a normal system, I'd be looking at monitoring the errors, response time percentiles, connections, bandwidth, CPU usage etc
